@@ -1,98 +1,106 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+export default function WelcomeScreen() {
+  const router = useRouter();
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
   return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+    <View style={styles.container}>
+      {/* Soft pink-to-white gradient behind the top half of the screen */}
+      <LinearGradient
+        colors={["#F3E5F5", "#FDFBFB"]}
+        style={styles.gradient}
+      />
 
-export default function HomeScreen() {
-  return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
-
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
+      <SafeAreaView style={styles.content} edges={["top", "bottom"]}>
+        <View style={styles.logoBlock}>
+          {/* Swap this for your real logo asset, e.g.:
+              <Image source={require("../assets/images/logo.png")} style={styles.logoImage} resizeMode="contain" />
+          */}
+          <Image
+            source={require("../../assets/images/logo.png")}
+            style={styles.logoImage}
+            resizeMode="contain"
           />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
 
-        {Platform.OS === 'web' && <WebBadge />}
+          <Text style={styles.brandLine1}>AI Fashion</Text>
+          <Text style={styles.brandLine2}>Assistant</Text>
+        </View>
+
+        <Text style={styles.tagline}>Your Perfect Outfit Starts Here</Text>
+
+        <View style={styles.spacer} />
+
+        <View style={styles.actions}>
+          <TouchableOpacity
+            style={styles.signUpButton}
+            onPress={() => router.push("/signup")}
+          >
+            <Text style={styles.signUpText}>Sign Up</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={() => router.push("/login")} style={styles.loginRow}>
+            <Text style={styles.loginText}>
+              Already have an account? <Text style={styles.loginLink}>Login</Text>
+            </Text>
+          </TouchableOpacity>
+        </View>
       </SafeAreaView>
-    </ThemedView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
+  container: { flex: 1, backgroundColor: "#FDFBFB" },
+  gradient: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: "55%",
   },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
+  content: { flex: 1, paddingHorizontal: 32 },
+
+  logoBlock: { alignItems: "center", marginTop: "35%" },
+  logoImage: { width: 150, height: 150 },
+
+  brandLine1: {
+    fontSize: 28,
+    fontWeight: "700",
+    fontFamily: "serif", // replace with a loaded custom font, e.g. PlayfairDisplay-Bold
+    color: "#1A1A1A",
+    marginTop: 4,
   },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
+  brandLine2: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#1A1A1A",
+    marginTop: -2,
   },
-  title: {
-    textAlign: 'center',
+
+  tagline: {
+    textAlign: "center",
+    fontSize: 24,
+    fontStyle: "italic",
+    fontFamily: "serif", // replace with a script font, e.g. DancingScript-Regular
+    color: "#8B3A4A",
+    marginTop: 28,
   },
-  code: {
-    textTransform: 'uppercase',
+
+  spacer: { flex: 1 },
+
+  actions: { marginBottom: 40 },
+  signUpButton: {
+    backgroundColor: "#2B2B2B",
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: "center",
   },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
-  },
+  signUpText: { color: "#FFFFFF", fontSize: 16, fontWeight: "600" },
+
+  loginRow: { marginTop: 16, alignItems: "center" },
+  loginText: { fontSize: 13, color: "#4B5563" },
+  loginLink: { fontWeight: "600", color: "#1A1A1A" },
 });
