@@ -12,6 +12,7 @@ import BottomTabBar from "../../src/app/BottomTabBar";
 
 export default function StylistScreen() {
   return (
+    <View style={{ flex: 1 }}>
     <ScrollView
       style={styles.container}
       showsVerticalScrollIndicator={false}
@@ -224,8 +225,9 @@ export default function StylistScreen() {
       </View>
 
       <View style={{ height: 40 }} />
-      <BottomTabBar active="stylist" />
     </ScrollView>
+    <BottomTabBar active="stylist" />
+    </View>
   );
 }
 

@@ -13,6 +13,25 @@ export default function SignupScreen() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  const handleSignup = () => {
+    if (!name.trim() || !email.trim() || !password.trim()) {
+      setError("Please fill in all fields.");
+      return;
+    }
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(email.trim())) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+    setError("");
+    router.replace("/home");
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -40,7 +59,7 @@ export default function SignupScreen() {
         onChangeText={setEmail}
       />
 
-      <TextInput
+     <TextInput
         style={styles.input}
         placeholder="Password"
         secureTextEntry
@@ -48,9 +67,11 @@ export default function SignupScreen() {
         onChangeText={setPassword}
       />
 
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
       <TouchableOpacity
         style={styles.signupButton}
-        onPress={() => router.replace("/home")}
+        onPress={handleSignup}
       >
         <Text style={styles.signupText}>Create Account</Text>
       </TouchableOpacity>
@@ -134,5 +155,11 @@ const styles = StyleSheet.create({
   loginText: {
     color: "#8C4D5A",
     fontWeight: "bold",
+  },
+  errorText: {
+    color: "#D14343",
+    fontSize: 13,
+    marginBottom: 10,
+    alignSelf: "flex-start",
   },
 });

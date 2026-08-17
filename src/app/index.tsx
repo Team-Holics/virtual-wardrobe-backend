@@ -1,4 +1,3 @@
-import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -8,11 +7,8 @@ export default function WelcomeScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Soft pink-to-white gradient behind the top half of the screen */}
-      <LinearGradient
-        colors={["#F3E5F5", "#FDFBFB"]}
-        style={styles.gradient}
-      />
+      <View style={styles.pinkOval} />
+
 
       <SafeAreaView style={styles.content} edges={["top", "bottom"]}>
         <View style={styles.logoBlock}>
@@ -25,8 +21,6 @@ export default function WelcomeScreen() {
             resizeMode="contain"
           />
 
-          <Text style={styles.brandLine1}>AI Fashion</Text>
-          <Text style={styles.brandLine2}>Assistant</Text>
         </View>
 
         <Text style={styles.tagline}>Your Perfect Outfit Starts Here</Text>
@@ -54,17 +48,19 @@ export default function WelcomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#FDFBFB" },
-  gradient: {
+  pinkOval: {
     position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: "55%",
+    top: -300,
+    left: -100,
+    right: -100,
+    height: 740,
+    borderRadius: 350,
+    backgroundColor: "#d084dc",
   },
   content: { flex: 1, paddingHorizontal: 32 },
 
   logoBlock: { alignItems: "center", marginTop: "35%" },
-  logoImage: { width: 150, height: 150 },
+  logoImage: { width: 250, height: 250, marginTop: 25},
 
   brandLine1: {
     fontSize: 28,

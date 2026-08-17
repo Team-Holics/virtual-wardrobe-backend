@@ -1,17 +1,36 @@
 import { router } from "expo-router";
 import { useState } from "react";
 import {
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  const handleLogin = () => {
+    if (!email.trim() || !password.trim()) {
+      setError("Please fill in both fields.");
+      return;
+    }
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(email.trim())) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+    setError("");
+    router.replace("/home");
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -38,9 +57,11 @@ export default function LoginScreen() {
         onChangeText={setPassword}
       />
 
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
       <TouchableOpacity
         style={styles.loginButton}
-        onPress={() => router.replace("/home")}
+        onPress={handleLogin}
       >
         <Text style={styles.loginButtonText}>Login</Text>
       </TouchableOpacity>
@@ -124,5 +145,11 @@ const styles = StyleSheet.create({
   signupText: {
     color: "#8C4D5A",
     fontWeight: "bold",
+  },
+  errorText: {
+    color: "#D14343",
+    fontSize: 13,
+    marginBottom: 10,
+    alignSelf: "flex-start",
   },
 });

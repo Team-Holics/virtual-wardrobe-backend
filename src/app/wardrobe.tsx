@@ -116,8 +116,13 @@ export default function WardrobeScreen() {
         showsVerticalScrollIndicator={false}
       >
 
-        <View style={styles.grid}>
+       <View style={styles.grid}>
 
+        {clothes.length === 0 && (
+          <Text style={styles.emptyText}>
+            Your wardrobe is empty. Tap + to add your first item.
+          </Text>
+        )}
 
         {
           clothes.map((item,index)=>(
@@ -274,5 +279,12 @@ type:{
   marginTop:4,
 },
 
+emptyText:{
+  color:"#999",
+  fontSize:14,
+  textAlign:"center",
+  marginTop:40,
+  width:"100%",
+},
 
 });
