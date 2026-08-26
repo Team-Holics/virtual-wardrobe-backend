@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
   ScrollView,
@@ -17,6 +18,8 @@ const BODY_TYPES = ["Slim", "Athletic", "Curvy", "Plus"];
 const STYLE_VIBES = ["Casual", "Streetwear", "Minimalist", "Formal", "Boho", "Sporty"];
 
 export default function ProfileScreen() {
+  const router = useRouter();
+  const handleLogout = () => {router.replace("/login");};
   const [skinTone, setSkinTone] = useState(2);
   const [height, setHeight] = useState("5'10\"");
   const [weight, setWeight] = useState("165 lb");
@@ -43,9 +46,14 @@ export default function ProfileScreen() {
             <Text style={styles.title}>My Profile</Text>
             <Text style={styles.subtitle}>Personalize your avatar and style preferences</Text>
           </View>
+            <View style={{ flexDirection: "row", gap: 8 }}>
           <TouchableOpacity style={styles.iconButton}>
             <Ionicons name="settings-outline" size={20} color="#374151" />
           </TouchableOpacity>
+          <TouchableOpacity style={styles.iconButton} onPress={handleLogout}>
+            <Ionicons name="log-out-outline" size={20} color="#DC2626" />
+          </TouchableOpacity>
+           </View>
         </View>
 
         {/* Avatar preview */}

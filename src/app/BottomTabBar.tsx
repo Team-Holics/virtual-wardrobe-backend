@@ -24,11 +24,13 @@ export default function BottomTabBar({ active }: { active: TabKey }) {
             style={styles.tab}
             onPress={() => router.push(tab.route as any)}
           >
-            <Ionicons
-              name={isActive ? (tab.icon.replace("-outline", "") as any) : tab.icon}
-              size={22}
-              color={isActive ? "#111827" : "#9CA3AF"}
-            />
+            <View style={styles.iconWrap}>
+              <Ionicons
+                name={isActive ? (tab.icon.replace("-outline", "") as any) : tab.icon}
+                size={22}
+                color={isActive ? "#111827" : "#9CA3AF"}
+              />
+            </View>
             <Text style={[styles.label, isActive && styles.labelActive]}>{tab.label}</Text>
           </TouchableOpacity>
         );
@@ -38,13 +40,14 @@ export default function BottomTabBar({ active }: { active: TabKey }) {
 }
 
 const styles = StyleSheet.create({
+  iconWrap: { height: 22, justifyContent: "center", alignItems: "center" },
   container: {
     flexDirection: "row",
     borderTopWidth: 1,
     borderTopColor: "#F3F4F6",
     backgroundColor: "#FFFFFF",
     paddingTop: 10,
-    paddingBottom: 24, // extra padding for the home-indicator area on iOS
+    paddingBottom: 8, // extra padding for the home-indicator area on iOS
   },
   tab: { flex: 1, alignItems: "center", gap: 4 },
   label: { fontSize: 11, color: "#9CA3AF", fontWeight: "500" },

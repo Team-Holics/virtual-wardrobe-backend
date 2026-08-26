@@ -1,14 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import BottomTabBar from "../../src/app/BottomTabBar";
+import { useAppData } from "../../src/context/AppDataContext";
 
-const VIEW_TABS = ["Uploaded Item", "Full Outfit", "Top Only"] as const;
+const CATEGORIES = ["Tops", "Bottoms", "Dresses", "Shoes", "Accessories"];
 
-// Fit analysis would normally come back from a sizing/computer-vision API
-// call after the item + avatar measurements are sent to the backend.
+// Mock AI analysis — replace with a real sizing/CV API call once the backend is ready
 const FIT_DATA = {
   confidence: 87,
   recommendedSize: "M",
@@ -17,12 +17,56 @@ const FIT_DATA = {
 
 export default function TryOnScreen() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<(typeof VIEW_TABS)[number]>(VIEW_TABS[0]);
+  const { addToWardrobe, addToWishlist } = useAppData();
+
+  const [pickedImage, setPickedImage] = useState<string | null>(null);
+  const [itemName, setItemName] = useState("");
+  const [category, setCategory] = useState<string | null>(null);
+  const [satisfaction, setSatisfaction] = useState<"yes" | "no" | null>(null);
+  const [confirmation, setConfirmation] = useState<string | null>(null);
+
+  const handlePickImage = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.7,
+    });
+    if (!result.canceled) {
+      setPickedImage(result.assets[0].uri);
+      // reset downstream state whenever a new photo is picked
+      setSatisfaction(null);
+      setConfirmation(null);
+    }
+  };
+
+  const handleAddToWardrobe = () => {
+    if (!pickedImage || !category) return;
+    addToWardrobe({
+      name: itemName.trim() || "Untitled item",
+      type: category,
+      image: { uri: pickedImage },
+    });
+    setConfirmation("Added to your wardrobe!");
+  };
+
+  const handleAddToWishlist = () => {
+    if (!pickedImage) return;
+    addToWishlist({
+      name: itemName.trim() || "Untitled item",
+      brand: "",
+      source: "",
+      price: "",
+      imageUri: pickedImage,
+    });
+    setConfirmation("Added to your wishlist!");
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      {/* Header */}
-      <View style={styles.headerRow}>
+            <View style={styles.headerRow}>
         <TouchableOpacity style={styles.iconButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={18} color="#374151" />
         </TouchableOpacity>
@@ -32,61 +76,125 @@ export default function TryOnScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Avatar preview stage */}
-      <View style={styles.stage}>
-        {/* Replace with the rendered avatar + garment composite image */}
-        <View style={styles.stageHead} />
-        <View style={styles.stageBody} />
-      </View>
-
-      {/* View tabs */}
-      <View style={styles.tabRow}>
-        {VIEW_TABS.map((tab) => (
-          <TouchableOpacity
-            key={tab}
-            onPress={() => setActiveTab(tab)}
-            style={[styles.pill, activeTab === tab && styles.pillActive]}
-          >
-            <Text style={[styles.pillText, activeTab === tab && styles.pillTextActive]}>
-              {tab}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* AI Fit Analysis */}
-      <View style={styles.fitSection}>
-        <Text style={styles.fitLabel}>AI Fit Analysis</Text>
-        <View style={styles.fitRow}>
-          <Text style={styles.fitConfidence}>Fit Confidence: {FIT_DATA.confidence}%</Text>
-          <View style={styles.sizeBadge}>
-            <Text style={styles.sizeBadgeText}>
-              Recommended Size: <Text style={{ fontWeight: "700" }}>{FIT_DATA.recommendedSize}</Text>
-            </Text>
+      <ScrollView showsVerticalScrollIndicator={false}>
+      {/* Upload square */}
+      <TouchableOpacity style={styles.stage} onPress={handlePickImage}>
+        {pickedImage ? (
+          <Image source={{ uri: pickedImage }} style={styles.stageImage} />
+        ) : (
+          <View style={styles.stagePlaceholder}>
+            <Ionicons name="camera-outline" size={28} color="#9CA3AF" />
+            <Text style={styles.stagePlaceholderText}>Tap to upload a photo</Text>
           </View>
-        </View>
+        )}
+      </TouchableOpacity>
 
-        <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${FIT_DATA.confidence}%` }]} />
-        </View>
+      {pickedImage && (
+        <>
+          {/* AI Fit Analysis */}
+          <View style={styles.fitSection}>
+            <Text style={styles.fitLabel}>AI Fit Analysis</Text>
+            <View style={styles.fitRow}>
+              <Text style={styles.fitConfidence}>Fit Confidence: {FIT_DATA.confidence}%</Text>
+              <View style={styles.sizeBadge}>
+                <Text style={styles.sizeBadgeText}>
+                  Recommended Size: <Text style={{ fontWeight: "700" }}>{FIT_DATA.recommendedSize}</Text>
+                </Text>
+              </View>
+            </View>
 
-        {FIT_DATA.notes.map((note) => (
-          <Text key={note} style={styles.fitNote}>
-            • {note}
-          </Text>
-        ))}
-      </View>
+            <View style={styles.progressTrack}>
+              <View style={[styles.progressFill, { width: `${FIT_DATA.confidence}%` }]} />
+            </View>
 
-      {/* Actions */}
-      <View style={styles.actions}>
-        <TouchableOpacity style={styles.primaryButton}>
-          <Text style={styles.primaryButtonText}>Add to Wardrobe</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.secondaryButton}>
-          <Text style={styles.secondaryButtonText}>Add to Wishlist</Text>
-        </TouchableOpacity>
-      </View>
-      <BottomTabBar active="upload" />
+            {FIT_DATA.notes.map((note) => (
+              <Text key={note} style={styles.fitNote}>
+                • {note}
+              </Text>
+            ))}
+          </View>
+
+          {/* Satisfaction prompt */}
+          <View style={styles.satisfactionSection}>
+            <Text style={styles.satisfactionLabel}>Are you satisfied with this look?</Text>
+            <View style={styles.satisfactionRow}>
+              <TouchableOpacity
+                style={[styles.satisfactionButton, satisfaction === "yes" && styles.satisfactionButtonActiveYes]}
+                onPress={() => setSatisfaction("yes")}
+              >
+                <Ionicons
+                  name="thumbs-up-outline"
+                  size={18}
+                  color={satisfaction === "yes" ? "#FFFFFF" : "#374151"}
+                />
+                <Text style={[styles.satisfactionText, satisfaction === "yes" && styles.satisfactionTextActive]}>
+                  Yes
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.satisfactionButton, satisfaction === "no" && styles.satisfactionButtonActiveNo]}
+                onPress={() => setSatisfaction("no")}
+              >
+                <Ionicons
+                  name="thumbs-down-outline"
+                  size={18}
+                  color={satisfaction === "no" ? "#FFFFFF" : "#374151"}
+                />
+                <Text style={[styles.satisfactionText, satisfaction === "no" && styles.satisfactionTextActive]}>
+                  Not really
+                </Text>
+              </TouchableOpacity>
+            </View>
+            {satisfaction === "no" && (
+              <Text style={styles.satisfactionFollowup}>
+                Try a different photo or check the AI Stylist for other suggestions.
+              </Text>
+            )}
+          </View>
+
+          {/* Item name */}
+          <Text style={styles.inputLabel}>Item name (optional)</Text>
+          <TextInput
+            value={itemName}
+            onChangeText={setItemName}
+            placeholder="e.g. White Oversized Shirt"
+            style={styles.input}
+          />
+
+          {/* Category — only required for Wardrobe */}
+          <Text style={styles.inputLabel}>Category (needed for Wardrobe)</Text>
+          <View style={styles.categoryRow}>
+            {CATEGORIES.map((cat) => (
+              <TouchableOpacity
+                key={cat}
+                onPress={() => setCategory(cat)}
+                style={[styles.categoryChip, category === cat && styles.categoryChipActive]}
+              >
+                <Text style={[styles.categoryChipText, category === cat && styles.categoryChipTextActive]}>
+                  {cat}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {confirmation && <Text style={styles.confirmationText}>{confirmation}</Text>}
+
+          {/* Actions */}
+          <View style={styles.actions}>
+            <TouchableOpacity
+              style={[styles.primaryButton, !category && styles.buttonDisabled]}
+              onPress={handleAddToWardrobe}
+              disabled={!category}
+            >
+              <Text style={styles.primaryButtonText}>Add to Wardrobe</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.secondaryButton} onPress={handleAddToWishlist}>
+              <Text style={styles.secondaryButtonText}>Add to Wishlist</Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -114,25 +222,11 @@ const styles = StyleSheet.create({
     aspectRatio: 4 / 5,
     borderRadius: 20,
     backgroundColor: "#EEF2FF",
-    alignItems: "center",
-    justifyContent: "center",
     overflow: "hidden",
   },
-  stageHead: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: "#FDE68A",
-    marginBottom: -40,
-    zIndex: 2,
-  },
-  stageBody: { width: 140, height: 170, borderRadius: 28, backgroundColor: "#818CF8" },
-
-  tabRow: { flexDirection: "row", gap: 8, marginTop: 16 },
-  pill: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 999, backgroundColor: "#F3F4F6" },
-  pillActive: { backgroundColor: "#111827" },
-  pillText: { fontSize: 12, fontWeight: "500", color: "#4B5563" },
-  pillTextActive: { color: "#FFFFFF" },
+  stageImage: { width: "100%", height: "100%" },
+  stagePlaceholder: { flex: 1, alignItems: "center", justifyContent: "center", gap: 8 },
+  stagePlaceholderText: { fontSize: 13, color: "#9CA3AF" },
 
   fitSection: { marginTop: 20 },
   fitLabel: { fontSize: 11, color: "#9CA3AF" },
@@ -145,7 +239,6 @@ const styles = StyleSheet.create({
   fitConfidence: { fontSize: 16, fontWeight: "700", color: "#111827" },
   sizeBadge: { backgroundColor: "#F3F4F6", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 4 },
   sizeBadgeText: { fontSize: 11, color: "#4B5563" },
-
   progressTrack: {
     height: 8,
     borderRadius: 4,
@@ -154,11 +247,59 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   progressFill: { height: "100%", borderRadius: 4, backgroundColor: "#111827" },
-
   fitNote: { fontSize: 12, color: "#6B7280", marginTop: 6 },
 
-  actions: { marginTop: "auto", paddingVertical: 16, gap: 8 },
+  satisfactionSection: { marginTop: 20 },
+  satisfactionLabel: { fontSize: 13, fontWeight: "600", color: "#111827", marginBottom: 8 },
+  satisfactionRow: { flexDirection: "row", gap: 8 },
+  satisfactionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: "#F3F4F6",
+  },
+  satisfactionButtonActiveYes: { backgroundColor: "#16A34A" },
+  satisfactionButtonActiveNo: { backgroundColor: "#DC2626" },
+  satisfactionText: { fontSize: 13, fontWeight: "500", color: "#374151" },
+  satisfactionTextActive: { color: "#FFFFFF" },
+  satisfactionFollowup: { fontSize: 12, color: "#9CA3AF", marginTop: 8 },
+
+  inputLabel: { fontSize: 12, color: "#6B7280", marginBottom: 4, marginTop: 16 },
+  input: {
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: "#111827",
+  },
+
+  categoryRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 4 },
+  categoryChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: "#F3F4F6",
+  },
+  categoryChipActive: { backgroundColor: "#111827" },
+  categoryChipText: { fontSize: 13, fontWeight: "500", color: "#4B5563" },
+  categoryChipTextActive: { color: "#FFFFFF" },
+
+  confirmationText: {
+    marginTop: 16,
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#16A34A",
+    textAlign: "center",
+  },
+
+  actions: { marginTop: 20, marginBottom: 24, gap: 8 },
   primaryButton: { paddingVertical: 16, borderRadius: 14, backgroundColor: "#111827", alignItems: "center" },
+  buttonDisabled: { backgroundColor: "#D1D5DB" },
   primaryButtonText: { color: "#FFFFFF", fontSize: 15, fontWeight: "700" },
   secondaryButton: {
     paddingVertical: 16,
@@ -169,3 +310,4 @@ const styles = StyleSheet.create({
   },
   secondaryButtonText: { color: "#111827", fontSize: 15, fontWeight: "700" },
 });
+

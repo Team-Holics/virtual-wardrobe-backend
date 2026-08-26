@@ -1,6 +1,5 @@
 import {
   Image,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -8,11 +7,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import BottomTabBar from "../../src/app/BottomTabBar";
 
 export default function HomeScreen() {
   return (
-    <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={["top"]}>
       <ScrollView showsVerticalScrollIndicator={false}>
 
         {/* Header */}
