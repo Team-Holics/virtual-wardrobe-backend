@@ -1,401 +1,301 @@
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import React, { useState } from "react";
 import {
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  FlatList,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import BottomTabBar from "../../src/app/BottomTabBar";
 
 export default function StylistScreen() {
+  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState<any[]>([]);
+
+  const sendMessage = () => {
+    if (!message.trim()) return;
+
+    setMessages([
+      ...messages,
+      {
+        id: Date.now().toString(),
+        sender: "user",
+        text: message,
+      },
+    ]);
+
+    setMessage("");
+  };
+
+  const selectSuggestion = (text: string) => {
+    setMessage(text);
+  };
+
   return (
-    <View style={{ flex: 1 }}>
-    <ScrollView
-      style={styles.container}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* Header */}
+    <View style={styles.container}>
+
+      {/* HEADER */}
       <View style={styles.header}>
-        <View style={styles.logoCircle}>
+
+      <TouchableOpacity
+        style={styles.circleButton}
+        onPress={() => router.back()}
+      >
+        <Ionicons
+          name="chevron-back"
+          size={28}
+          color="#000"
+        />
+      </TouchableOpacity>
+
+        <View style={styles.profile}>
+          <View style={styles.avatar}>
+            <Ionicons
+              name="person"
+              size={24}
+              color="#777"
+            />
+          </View>
+
+          <View>
+            <Text style={styles.name}>Eli</Text>
+            <Text style={styles.subtitle}>AI Stylist</Text>
+          </View>
+        </View>
+
+        <TouchableOpacity style={styles.circleButton}>
           <Ionicons
-            name="sparkles-outline"
+            name="time-outline"
+            size={27}
+            color="#000"
+          />
+        </TouchableOpacity>
+
+      </View>
+
+
+      {/* CHAT AREA */}
+
+      {messages.length === 0 ? (
+
+        <View style={styles.welcomeContainer}>
+          <Text style={styles.welcomeText}>
+            How can I help you, Myat?
+          </Text>
+        </View>
+
+      ) : (
+
+        <FlatList
+          data={messages}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.chat}
+          renderItem={({ item }) => (
+
+            <View style={styles.userMessage}>
+              <Text style={styles.userText}>
+                {item.text}
+              </Text>
+            </View>
+
+          )}
+        />
+
+      )}
+
+
+      {/* QUICK SUGGESTIONS */}
+
+      <View style={styles.suggestions}>
+
+        <TouchableOpacity
+          style={styles.suggestionButton}
+          onPress={() =>
+            selectSuggestion("Make an outfit")
+          }
+        >
+          <Text>Make an outfit</Text>
+        </TouchableOpacity>
+
+                <TouchableOpacity
+          style={styles.suggestionButton}
+          onPress={() => selectSuggestion("Create a packing list")}
+        >
+          <Text style={styles.suggestionButtonText}>
+            Make an outfit
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.suggestionButton}
+          onPress={() =>
+            selectSuggestion("Rate my outfit")
+          }
+        >
+          <Text>Rate my outfit</Text>
+        </TouchableOpacity>
+
+      </View>
+
+
+      {/* INPUT */}
+
+      <View style={styles.inputContainer}>
+
+        <TextInput
+          style={styles.input}
+          placeholder="Ask anything"
+          placeholderTextColor="#999"
+          value={message}
+          onChangeText={setMessage}
+          multiline
+        />
+
+        <TouchableOpacity
+          style={styles.sendButton}
+          onPress={sendMessage}
+        >
+          <Ionicons
+            name="arrow-up"
             size={26}
             color="#fff"
           />
-        </View>
-
-        <Text style={styles.headerTitle}>
-          AI Stylist
-        </Text>
-      </View>
-
-      {/* AI Message */}
-      <View style={styles.chatBubble}>
-        <Text style={styles.chatText}>
-          Based on your wardrobe, here's what I recommend for a casual Friday outing ✨
-        </Text>
-      </View>
-
-      {/* Search */}
-      <View style={styles.searchRow}>
-        <TextInput
-          placeholder="Describe your occasion, mood, or style..."
-          placeholderTextColor="#888"
-          style={styles.searchInput}
-        />
-
-        <TouchableOpacity style={styles.sendButton}>
-          <Ionicons
-            name="paper-plane-outline"
-            size={22}
-            color="#fff"
-          />
-        </TouchableOpacity>
-      </View>
-
-      {/* Categories */}
-
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.categoryContainer}
-      >
-        <TouchableOpacity
-          style={[styles.categoryButton, styles.activeCategory]}
-        >
-          <Text style={styles.activeCategoryText}>
-            Casual
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.categoryButton}>
-          <Text style={styles.categoryText}>
-            Formal
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.categoryButton}>
-          <Text style={styles.categoryText}>
-            Work
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.categoryButton}>
-          <Text style={styles.categoryText}>
-            Date Night
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.categoryButton}>
-          <Text style={styles.categoryText}>
-            Summer
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.categoryButton}>
-          <Text style={styles.categoryText}>
-            Party
-          </Text>
-        </TouchableOpacity>
-      </ScrollView>
-
-      {/* Suggested */}
-
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>
-          Suggested Outfits
-        </Text>
-
-        <TouchableOpacity>
-          <Text style={styles.seeAll}>
-            See All
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.cardGrid}>
-
-        {/* Outfit 1 */}
-        <TouchableOpacity style={styles.card}>
-          <View style={styles.imageContainer}>
-            <Image
-              source={require("../../assets/images/look1.jpg")}
-              style={styles.cardImage}
-            />
-
-            <TouchableOpacity style={styles.favoriteButton}>
-              <Ionicons
-                name="heart-outline"
-                size={20}
-                color="#111"
-              />
-            </TouchableOpacity>
-          </View>
-
-          <Text style={styles.cardTitle}>
-            Smart Casual
-          </Text>
-
-          <Text style={styles.cardSubtitle}>
-            Beige shirt + black pants
-          </Text>
-        </TouchableOpacity>
-
-        {/* Outfit 2 */}
-        <TouchableOpacity style={styles.card}>
-          <View style={styles.imageContainer}>
-            <Image
-              source={require("../../assets/images/look2.jpg")}
-              style={styles.cardImage}
-            />
-
-            <TouchableOpacity style={styles.favoriteButton}>
-              <Ionicons
-                name="heart-outline"
-                size={20}
-                color="#111"
-              />
-            </TouchableOpacity>
-          </View>
-
-          <Text style={styles.cardTitle}>
-            Street Style
-          </Text>
-
-          <Text style={styles.cardSubtitle}>
-            Hoodie & denim
-          </Text>
-        </TouchableOpacity>
-
-        {/* Outfit 3 */}
-        <TouchableOpacity style={styles.card}>
-          <View style={styles.imageContainer}>
-            <Image
-              source={require("../../assets/images/look3.jpg")}
-              style={styles.cardImage}
-            />
-
-            <TouchableOpacity style={styles.favoriteButton}>
-              <Ionicons
-                name="heart-outline"
-                size={20}
-                color="#111"
-              />
-            </TouchableOpacity>
-          </View>
-
-          <Text style={styles.cardTitle}>
-            Office Chic
-          </Text>
-
-          <Text style={styles.cardSubtitle}>
-            Minimal business look
-          </Text>
-        </TouchableOpacity>
-
-        {/* Outfit 4 */}
-        <TouchableOpacity style={styles.card}>
-          <View style={styles.imageContainer}>
-            <Image
-              source={require("../../assets/images/look4.jpg")}
-              style={styles.cardImage}
-            />
-
-            <TouchableOpacity style={styles.favoriteButton}>
-              <Ionicons
-                name="heart-outline"
-                size={20}
-                color="#111"
-              />
-            </TouchableOpacity>
-          </View>
-
-          <Text style={styles.cardTitle}>
-            Date Night
-          </Text>
-
-          <Text style={styles.cardSubtitle}>
-            Elegant evening outfit
-          </Text>
         </TouchableOpacity>
 
       </View>
 
-      <View style={{ height: 40 }} />
-    </ScrollView>
-    <BottomTabBar active="stylist" />
     </View>
   );
 }
 
+
 const styles = StyleSheet.create({
-      container: {
+
+  container: {
     flex: 1,
-    backgroundColor: "#FAFAFA",
-    paddingHorizontal: 20,
+    backgroundColor: "#fff",
   },
 
   header: {
+    height: 110,
+    paddingTop: 45,
+    paddingHorizontal: 20,
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 60,
-    marginBottom: 30,
+    justifyContent: "space-between",
   },
 
-  logoCircle: {
-    width: 50,
-    height: 50,
+  circleButton: {
+    width: 55,
+    height: 55,
+    borderRadius: 30,
+    backgroundColor: "#f8f8f8",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  profile: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  avatar: {
+    width: 48,
+    height: 48,
     borderRadius: 25,
-    backgroundColor: "#111",
+    backgroundColor: "#eee",
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    marginRight: 10,
   },
 
-  headerTitle: {
-    fontSize: 34,
-    fontWeight: "700",
-    color: "#111",
-  },
-
-  chatBubble: {
-    backgroundColor: "#ECECEC",
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 25,
-  },
-
-  chatText: {
-    fontSize: 18,
-    lineHeight: 28,
-    color: "#222",
-  },
-
-  searchRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 25,
-  },
-
-  searchInput: {
-    flex: 1,
-    backgroundColor: "#fff",
-    borderRadius: 30,
-    paddingHorizontal: 22,
-    height: 56,
-    fontSize: 16,
-    elevation: 3,
-  },
-
-  sendButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "#111",
-    justifyContent: "center",
-    alignItems: "center",
-    marginLeft: 12,
-    elevation: 3,
-  },
-
-  categoryContainer: {
-    paddingBottom: 25,
-  },
-
-  categoryButton: {
-    backgroundColor: "#fff",
-    paddingHorizontal: 22,
-    paddingVertical: 12,
-    borderRadius: 30,
-    marginRight: 12,
-    elevation: 2,
-  },
-
-  activeCategory: {
-    backgroundColor: "#111",
-  },
-
-  categoryText: {
-    fontSize: 16,
-    color: "#111",
-  },
-
-  activeCategoryText: {
-    fontSize: 16,
-    color: "#fff",
+  name: {
+    fontSize: 17,
     fontWeight: "600",
   },
 
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
+  subtitle: {
+    fontSize: 13,
+    color: "#888",
   },
 
-  sectionTitle: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#111",
-  },
-
-  seeAll: {
-    fontSize: 16,
-    color: "#666",
-  },
-
-  cardGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-  },
-
-  card: {
-    width: "48%",
-    backgroundColor: "#fff",
-    borderRadius: 24,
-    padding: 12,
-    marginBottom: 22,
-    elevation: 3,
-  },
-
-  imageContainer: {
-    position: "relative",
-  },
-
-  cardImage: {
-    width: "100%",
-    height: 180,
-    borderRadius: 18,
-    resizeMode: "cover",
-  },
-
-  favoriteButton: {
-    position: "absolute",
-    top: 10,
-    right: 10,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#fff",
+  welcomeContainer: {
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    elevation: 3,
+    paddingBottom: 100,
   },
 
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#111",
-    marginTop: 12,
+  welcomeText: {
+    fontSize: 22,
+    fontWeight: "500",
   },
 
-  cardSubtitle: {
+  chat: {
+    padding: 20,
+  },
+
+  userMessage: {
+    alignSelf: "flex-end",
+    backgroundColor: "#000",
+    padding: 15,
+    borderRadius: 20,
+    maxWidth: "80%",
+    marginBottom: 15,
+  },
+
+  userText: {
+    color: "#fff",
+    fontSize: 16,
+  },
+
+  suggestions: {
+    flexDirection: "row",
+    paddingHorizontal: 18,
+    gap: 10,
+    marginBottom: 12,
+  },
+
+  suggestionButton: {
+    backgroundColor: "#f4f4f4",
+    paddingHorizontal: 16,
+    paddingVertical: 11,
+    borderRadius: 25,
+  },
+
+  suggestionButtonText: {
     fontSize: 14,
-    color: "#777",
-    marginTop: 5,
   },
+
+  inputContainer: {
+    marginHorizontal: 18,
+    marginBottom: 20,
+    minHeight: 120,
+    backgroundColor: "#fafafa",
+    borderRadius: 28,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: "#eee",
+  },
+
+  input: {
+    fontSize: 16,
+    minHeight: 50,
+    paddingRight: 60,
+  },
+
+  sendButton: {
+    position: "absolute",
+    right: 15,
+    bottom: 15,
+    width: 52,
+    height: 52,
+    borderRadius: 30,
+    backgroundColor: "#000",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
 });

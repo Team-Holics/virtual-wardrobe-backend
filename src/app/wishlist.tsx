@@ -1,7 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
+  Alert,
   FlatList,
   Image,
   Modal,
@@ -13,15 +15,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import BottomTabBar from "../../src/app/BottomTabBar";
-
-type WishlistItem = {
-  id: string;
-  name: string;
-  brand: string;
-  source: string;
-  price: string;
-  imageUri?: string;
-};
+import { WishlistItem } from "../../src/context/AppDataContext";
 
 // Your existing wishlist items — replace these with real data later
 const INITIAL_ITEMS: WishlistItem[] = [
@@ -34,7 +28,9 @@ const INITIAL_ITEMS: WishlistItem[] = [
 function WishlistCard({ item, onDelete }: { item: WishlistItem; onDelete: (id: string) => void }) {
   return (
     <View style={styles.card}>
-            {item.imageUri ? (
+                  {item.image ? (
+        <Image source={item.image} style={styles.thumbnail} />
+      ) : item.imageUri ? (
         <Image source={{ uri: item.imageUri }} style={styles.thumbnail} />
       ) : (
         <View style={styles.thumbnail} />
@@ -58,6 +54,7 @@ function WishlistCard({ item, onDelete }: { item: WishlistItem; onDelete: (id: s
 }
 
 export default function WishlistScreen() {
+  const router = useRouter();
   const [items, setItems] = useState<WishlistItem[]>(INITIAL_ITEMS);
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -69,11 +66,18 @@ export default function WishlistScreen() {
   const [price, setPrice] = useState("");
   const [imageUri, setImageUri] = useState<string | null>(null);
 
-  const handlePickImage = async () => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      return; // user denied photo library access
+    const handleTakePhoto = async () => {
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) return;
+    const result = await ImagePicker.launchCameraAsync({ quality: 0.7 });
+    if (!result.canceled) {
+      setImageUri(result.assets[0].uri);
     }
+  };
+
+  const handleChooseFromLibrary = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) return;
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 0.7,
@@ -81,6 +85,14 @@ export default function WishlistScreen() {
     if (!result.canceled) {
       setImageUri(result.assets[0].uri);
     }
+  };
+
+  const handlePickImage = () => {
+    Alert.alert("Add Photo", "Choose an option", [
+      { text: "Take Photo", onPress: handleTakePhoto },
+      { text: "Choose from Library", onPress: handleChooseFromLibrary },
+      { text: "Cancel", style: "cancel" },
+    ]);
   };
     const resetForm = () => {
     setName("");
@@ -111,7 +123,10 @@ export default function WishlistScreen() {
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={{ flex: 1 }}>
-        <View style={styles.headerRow}>
+                <View style={styles.headerRow}>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={22} color="#111827" />
+          </TouchableOpacity>
           <View style={styles.headerTitleRow}>
             <Ionicons name="heart" size={18} color="#111827" />
             <Text style={styles.title}>My Wishlist</Text>

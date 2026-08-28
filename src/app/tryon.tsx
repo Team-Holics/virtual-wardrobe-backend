@@ -2,7 +2,16 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import {
+  Alert,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAppData } from "../../src/context/AppDataContext";
 
@@ -22,24 +31,40 @@ export default function TryOnScreen() {
   const [pickedImage, setPickedImage] = useState<string | null>(null);
   const [itemName, setItemName] = useState("");
   const [category, setCategory] = useState<string | null>(null);
-  const [satisfaction, setSatisfaction] = useState<"yes" | "no" | null>(null);
+    const [rating, setRating] = useState(0); // 0 = not rated yet, 1–5 stars
   const [confirmation, setConfirmation] = useState<string | null>(null);
 
-  const handlePickImage = async () => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      return;
+      const handleTakePhoto = async () => {
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) return;
+    const result = await ImagePicker.launchCameraAsync({ quality: 0.7 });
+    if (!result.canceled) {
+      setPickedImage(result.assets[0].uri);
+      setRating(0);
+      setConfirmation(null);
     }
+  };
+
+    const handleChooseFromLibrary = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) return;
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 0.7,
     });
     if (!result.canceled) {
       setPickedImage(result.assets[0].uri);
-      // reset downstream state whenever a new photo is picked
-      setSatisfaction(null);
+      setRating(0);
       setConfirmation(null);
     }
+  };
+
+  const handlePickImage = () => {
+    Alert.alert("Add Photo", "Choose an option", [
+      { text: "Take Photo", onPress: handleTakePhoto },
+      { text: "Choose from Library", onPress: handleChooseFromLibrary },
+      { text: "Cancel", style: "cancel" },
+    ]);
   };
 
   const handleAddToWardrobe = () => {
@@ -114,38 +139,22 @@ export default function TryOnScreen() {
             ))}
           </View>
 
-          {/* Satisfaction prompt */}
+                    {/* Satisfaction rating */}
           <View style={styles.satisfactionSection}>
             <Text style={styles.satisfactionLabel}>Are you satisfied with this look?</Text>
-            <View style={styles.satisfactionRow}>
-              <TouchableOpacity
-                style={[styles.satisfactionButton, satisfaction === "yes" && styles.satisfactionButtonActiveYes]}
-                onPress={() => setSatisfaction("yes")}
-              >
-                <Ionicons
-                  name="thumbs-up-outline"
-                  size={18}
-                  color={satisfaction === "yes" ? "#FFFFFF" : "#374151"}
-                />
-                <Text style={[styles.satisfactionText, satisfaction === "yes" && styles.satisfactionTextActive]}>
-                  Yes
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.satisfactionButton, satisfaction === "no" && styles.satisfactionButtonActiveNo]}
-                onPress={() => setSatisfaction("no")}
-              >
-                <Ionicons
-                  name="thumbs-down-outline"
-                  size={18}
-                  color={satisfaction === "no" ? "#FFFFFF" : "#374151"}
-                />
-                <Text style={[styles.satisfactionText, satisfaction === "no" && styles.satisfactionTextActive]}>
-                  Not really
-                </Text>
-              </TouchableOpacity>
+            <View style={styles.starRow}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <TouchableOpacity key={star} onPress={() => setRating(star)}>
+                  <Ionicons
+                    name={star <= rating ? "star" : "star-outline"}
+                    size={30}
+                    color={star <= rating ? "#F59E0B" : "#D1D5DB"}
+                    style={{ marginBottom: 6 }}
+                  />
+                </TouchableOpacity>
+              ))}
             </View>
-            {satisfaction === "no" && (
+            {rating > 0 && rating <= 2 && (
               <Text style={styles.satisfactionFollowup}>
                 Try a different photo or check the AI Stylist for other suggestions.
               </Text>
@@ -309,5 +318,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   secondaryButtonText: { color: "#111827", fontSize: 15, fontWeight: "700" },
+  starRow: { flexDirection: "row" },
 });
 

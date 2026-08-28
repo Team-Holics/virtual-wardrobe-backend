@@ -1,7 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
+  Alert,
   Image,
   Modal,
   ScrollView,
@@ -14,24 +16,57 @@ import {
 import BottomTabBar from "../../src/app/BottomTabBar";
 import { useAppData } from "../../src/context/AppDataContext";
 
+const TOP_TABS = ["Clothes", "Outfit"] as const;
+type TopTab = (typeof TOP_TABS)[number];
+
 const FILTER_CATEGORIES = ["All", "Tops", "Bottoms", "Dresses", "Shoes", "Accessories"];
 const ITEM_CATEGORIES = ["Tops", "Bottoms", "Dresses", "Shoes", "Accessories"];
+const SEASONS = ["Spring", "Summer", "Fall", "Winter"];
 
 export default function WardrobeScreen() {
-  const { wardrobeItems, addToWardrobe } = useAppData();
+  const router = useRouter();
+  const { wardrobeItems, addToWardrobe, outfitItems } = useAppData();
 
+  const [topTab, setTopTab] = useState<TopTab>("Clothes");
+  const [activeFilter, setActiveFilter] = useState("All");
   const [modalVisible, setModalVisible] = useState(false);
+
   const [itemName, setItemName] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [pickedImage, setPickedImage] = useState<string | null>(null);
+  const [brand, setBrand] = useState("");
+  const [color, setColor] = useState("");
+  const [pattern, setPattern] = useState("");
+  const [material, setMaterial] = useState("");
+  const [selectedSeasons, setSelectedSeasons] = useState<string[]>([]);
 
   const resetForm = () => {
     setItemName("");
     setSelectedCategory(null);
     setPickedImage(null);
+    setBrand("");
+    setColor("");
+    setPattern("");
+    setMaterial("");
+    setSelectedSeasons([]);
   };
 
-  const handlePickImage = async () => {
+  const toggleSeason = (season: string) => {
+    setSelectedSeasons((prev) =>
+      prev.includes(season) ? prev.filter((s) => s !== season) : [...prev, season]
+    );
+  };
+
+  const handleTakePhoto = async () => {
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) return;
+    const result = await ImagePicker.launchCameraAsync({ quality: 0.7 });
+    if (!result.canceled) {
+      setPickedImage(result.assets[0].uri);
+    }
+  };
+
+  const handleChooseFromLibrary = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) return;
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -43,12 +78,25 @@ export default function WardrobeScreen() {
     }
   };
 
+  const handlePickImage = () => {
+    Alert.alert("Add Photo", "Choose an option", [
+      { text: "Take Photo", onPress: handleTakePhoto },
+      { text: "Choose from Library", onPress: handleChooseFromLibrary },
+      { text: "Cancel", style: "cancel" },
+    ]);
+  };
+
   const handleAddItem = () => {
     if (!pickedImage || !selectedCategory) return;
     addToWardrobe({
       name: itemName.trim() || "Untitled item",
       type: selectedCategory,
       image: { uri: pickedImage },
+      brand: brand.trim(),
+      color: color.trim(),
+      pattern: pattern.trim(),
+      material: material.trim(),
+      seasons: selectedSeasons,
     });
     resetForm();
     setModalVisible(false);
@@ -56,53 +104,108 @@ export default function WardrobeScreen() {
 
   const canSubmit = !!pickedImage && !!selectedCategory;
 
+  const filteredClothes =
+    activeFilter === "All"
+      ? wardrobeItems
+      : wardrobeItems.filter((item) => item.type === activeFilter);
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={24} color="#222" />
+        </TouchableOpacity>
         <Text style={styles.title}>My Wardrobe</Text>
         <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
           <Text style={styles.addText}>+</Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.categoryContainer}
-      >
-        {FILTER_CATEGORIES.map((item, index) => (
+      {/* Top-level tabs: Clothes / Outfit */}
+      <View style={styles.topTabRow}>
+        {TOP_TABS.map((tab) => (
           <TouchableOpacity
-            key={index}
-            style={[styles.category, index === 0 && styles.activeCategory]}
+            key={tab}
+            onPress={() => setTopTab(tab)}
+            style={[styles.topTab, topTab === tab && styles.topTabActive]}
           >
-            <Text style={[styles.categoryText, index === 0 && styles.activeText]}>{item}</Text>
+            <Text style={[styles.topTabText, topTab === tab && styles.topTabTextActive]}>
+              {tab}
+            </Text>
           </TouchableOpacity>
         ))}
-      </ScrollView>
+      </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.grid}>
-          {wardrobeItems.length === 0 && (
-            <Text style={styles.emptyText}>
-              Your wardrobe is empty. Tap + to add your first item.
-            </Text>
-          )}
+      {topTab === "Clothes" ? (
+        <>
+          {/* Category filter — fixed to content size, functional */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categoryRow}
+          >
+            {FILTER_CATEGORIES.map((item) => (
+              <TouchableOpacity
+                key={item}
+                onPress={() => setActiveFilter(item)}
+                style={[styles.category, activeFilter === item && styles.activeCategory]}
+              >
+                <Text style={[styles.categoryText, activeFilter === item && styles.activeText]}>
+                  {item}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
 
-          {wardrobeItems.map((item) => (
-            <TouchableOpacity key={item.id} style={styles.card}>
-              <Image source={item.image} style={styles.clothImage} />
-              <Text style={styles.name}>{item.name}</Text>
-              <Text style={styles.type}>{item.type}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </ScrollView>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <View style={styles.grid}>
+              {filteredClothes.length === 0 && (
+                <Text style={styles.emptyText}>
+                  {activeFilter === "All"
+                    ? "Your wardrobe is empty. Tap + to add your first item."
+                    : `No ${activeFilter.toLowerCase()} yet.`}
+                </Text>
+              )}
+
+              {filteredClothes.map((item) => (
+                <TouchableOpacity
+                  key={item.id}
+                  style={styles.card}
+                  onPress={() => router.push(`/wardrobe-detail?id=${item.id}`)}
+                >
+                  <Image source={item.image} style={styles.clothImage} />
+                  <Text style={styles.name}>{item.name}</Text>
+                  <Text style={styles.type}>{item.type}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
+        </>
+      ) : (
+        <ScrollView showsVerticalScrollIndicator={false}>
+          <View style={styles.grid}>
+            {outfitItems.length === 0 && (
+              <Text style={styles.emptyText}>
+                No outfits saved yet. Outfits you like from Home will show up here.
+              </Text>
+            )}
+
+            {outfitItems.map((item) => (
+              <View key={item.id} style={styles.card}>
+                <Image source={item.image} style={styles.clothImage} />
+                <Text style={styles.name}>{item.name}</Text>
+              </View>
+            ))}
+          </View>
+        </ScrollView>
+      )}
 
       <BottomTabBar active="upload" />
 
+      {/* Add item modal — only for Clothes */}
       <Modal visible={modalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
+          <ScrollView style={styles.modalCard} contentContainerStyle={{ paddingBottom: 40 }}>
             <View style={styles.modalHeaderRow}>
               <Text style={styles.modalTitle}>Add to Wardrobe</Text>
               <TouchableOpacity
@@ -135,15 +238,12 @@ export default function WardrobeScreen() {
             />
 
             <Text style={styles.inputLabel}>Category</Text>
-            <View style={styles.categoryPickerRow}>
+            <View style={styles.chipRow}>
               {ITEM_CATEGORIES.map((cat) => (
                 <TouchableOpacity
                   key={cat}
                   onPress={() => setSelectedCategory(cat)}
-                  style={[
-                    styles.categoryChip,
-                    selectedCategory === cat && styles.categoryChipActive,
-                  ]}
+                  style={[styles.categoryChip, selectedCategory === cat && styles.categoryChipActive]}
                 >
                   <Text
                     style={[
@@ -157,6 +257,51 @@ export default function WardrobeScreen() {
               ))}
             </View>
 
+            <Text style={styles.inputLabel}>Brand (optional)</Text>
+            <TextInput value={brand} onChangeText={setBrand} placeholder="e.g. Levi's" style={styles.input} />
+
+            <Text style={styles.inputLabel}>Color (optional)</Text>
+            <TextInput value={color} onChangeText={setColor} placeholder="e.g. Navy Blue" style={styles.input} />
+
+            <Text style={styles.inputLabel}>Pattern (optional)</Text>
+            <TextInput
+              value={pattern}
+              onChangeText={setPattern}
+              placeholder="e.g. Striped, Solid, Floral"
+              style={styles.input}
+            />
+
+            <Text style={styles.inputLabel}>Material (optional)</Text>
+            <TextInput
+              value={material}
+              onChangeText={setMaterial}
+              placeholder="e.g. Cotton"
+              style={styles.input}
+            />
+
+            <Text style={styles.inputLabel}>Seasons (optional)</Text>
+            <View style={styles.chipRow}>
+              {SEASONS.map((season) => (
+                <TouchableOpacity
+                  key={season}
+                  onPress={() => toggleSeason(season)}
+                  style={[
+                    styles.categoryChip,
+                    selectedSeasons.includes(season) && styles.categoryChipActive,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.categoryChipText,
+                      selectedSeasons.includes(season) && styles.categoryChipTextActive,
+                    ]}
+                  >
+                    {season}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
             <TouchableOpacity
               style={[styles.submitButton, !canSubmit && styles.submitButtonDisabled]}
               onPress={handleAddItem}
@@ -164,7 +309,7 @@ export default function WardrobeScreen() {
             >
               <Text style={styles.submitButtonText}>Add Item</Text>
             </TouchableOpacity>
-          </View>
+          </ScrollView>
         </View>
       </Modal>
     </View>
@@ -184,17 +329,32 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   addText: { color: "#fff", fontSize: 30, marginTop: -3 },
-  categoryContainer: { marginTop: 25 },
+
+  topTabRow: {
+    flexDirection: "row",
+    marginTop: 20,
+    backgroundColor: "#F3E8EC",
+    borderRadius: 14,
+    padding: 4,
+  },
+  topTab: { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: "center" },
+  topTabActive: { backgroundColor: "#fff" },
+  topTabText: { fontSize: 14, fontWeight: "600", color: "#999" },
+  topTabTextActive: { color: "#222" },
+
+  // Fixed-size chip row — content-sized, not stretched
+  categoryRow: { flexDirection: "row", alignItems: "center", marginTop: 18, gap: 8 },
   category: {
-    paddingHorizontal: 18,
-    paddingVertical: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
     backgroundColor: "#fff",
-    borderRadius: 20,
-    marginRight: 10,
+    borderRadius: 16,
+    alignSelf: "flex-start",
   },
   activeCategory: { backgroundColor: "#F48FB1" },
-  categoryText: { color: "#777", fontSize: 14 },
+  categoryText: { color: "#777", fontSize: 13 },
   activeText: { color: "#fff" },
+
   emptyText: { color: "#999", fontSize: 14, textAlign: "center", marginTop: 40, width: "100%" },
   grid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", marginTop: 25 },
   card: { width: "47%", backgroundColor: "#fff", borderRadius: 20, padding: 12, marginBottom: 20 },
@@ -208,7 +368,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
-    paddingBottom: 40,
+    maxHeight: "85%",
   },
   modalHeaderRow: {
     flexDirection: "row",
@@ -241,7 +401,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#111827",
   },
-  categoryPickerRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 4 },
+  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 4 },
   categoryChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 999, backgroundColor: "#F3F4F6" },
   categoryChipActive: { backgroundColor: "#F48FB1" },
   categoryChipText: { fontSize: 13, fontWeight: "500", color: "#4B5563" },
