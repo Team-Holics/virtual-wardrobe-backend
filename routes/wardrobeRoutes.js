@@ -1,7 +1,7 @@
 const express = require("express");
 const pool = require("../db");
 const authenticateToken = require("../middleware/authMiddleware");
-
+const supabase = require("../supabaseClient");
 const router = express.Router();
 
 router.get("/", authenticateToken, async (req, res) => {
@@ -267,10 +267,88 @@ router.delete("/:id", authenticateToken, async (req, res) => {
 
         if (result.rows.length === 0) {
             return res.status(404).json({
+                error: "Wardrobe item not foud",
+            });
+        }
+router.delete("/:id", authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.user_id;
+        const itemId = req.params.id;
+
+        // 1. Find the item first
+        const findResult = await pool.query(
+            `
+            SELECT item_id, item_name, image_url
+            FROM Wardrobe_Item
+            WHERE item_id = $1
+              AND user_id = $2
+            `,
+            [itemId, userId]
+        );
+
+        if (findResult.rows.length === 0) {
+            return res.status(404).json({
                 error: "Wardrobe item not found",
             });
         }
 
+        const item = findResult.rows[0];
+
+        // 2. Delete image from Supabase if it is a Supabase image
+        if (
+            item.image_url &&
+            item.image_url.includes(
+                "/storage/v1/object/public/wardrobe-images/"
+            )
+        ) {
+            const marker = "/wardrobe-images/";
+
+            const markerIndex = item.image_url.indexOf(marker);
+
+            if (markerIndex !== -1) {
+                const filePath = item.image_url.substring(
+                    markerIndex + marker.length
+                );
+
+                const bucket =
+                    process.env.SUPABASE_BUCKET || "wardrobe-images";
+
+                const { error: storageError } = await supabase.storage
+                    .from(bucket)
+                    .remove([filePath]);
+
+                if (storageError) {
+                    console.error(
+                        "Supabase delete error:",
+                        storageError
+                    );
+                }
+            }
+        }
+
+        // 3. Delete database record
+        const deleteResult = await pool.query(
+            `
+            DELETE FROM Wardrobe_Item
+            WHERE item_id = $1
+              AND user_id = $2
+            RETURNING item_id, item_name
+            `,
+            [itemId, userId]
+        );
+
+        res.json({
+            message: "Wardrobe item deleted successfully",
+            item: deleteResult.rows[0],
+        });
+    } catch (error) {
+        console.error("Error deleting wardrobe item:", error);
+
+        res.status(500).json({
+            error: "Failed to delete wardrobe item",
+        });
+    }
+});
         res.json({
             message: "Wardrobe item deleted successfully",
             item: result.rows[0],

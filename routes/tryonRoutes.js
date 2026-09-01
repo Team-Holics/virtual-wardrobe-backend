@@ -114,5 +114,62 @@ router.get("/", authenticateToken, async (req, res) => {
         });
     }
 });
+router.patch("/:id/result", authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.user_id;
+        const sessionId = req.params.id;
 
+        const {
+            result_image,
+            fit_confidence,
+            size_prediction,
+        } = req.body;
+
+        if (!result_image) {
+            return res.status(400).json({
+                error: "result_image is required",
+            });
+        }
+
+        const result = await pool.query(
+            `
+            UPDATE TryOn_Session
+            SET
+                result_image = $1,
+                fit_confidence = $2,
+                size_prediction = $3
+            WHERE session_id = $4
+              AND user_id = $5
+            RETURNING *
+            `,
+            [
+                result_image,
+                fit_confidence ?? null,
+                size_prediction || null,
+                sessionId,
+                userId,
+            ]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                error: "Try-on session not found",
+            });
+        }
+
+        res.json({
+            message: "Try-on result updated successfully",
+            session: result.rows[0],
+        });
+    } catch (error) {
+        console.error(
+            "Error updating try-on result:",
+            error
+        );
+
+        res.status(500).json({
+            error: "Failed to update try-on result",
+        });
+    }
+});
 module.exports = router;
