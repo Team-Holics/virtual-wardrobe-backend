@@ -15,7 +15,7 @@ const OPTIONS = [
   },
   {
     icon: "layers-outline" as const,
-    title: "Add to Wardrobe",
+    title: "Wardrobe",
     description: "Save to your digital closet — we'll check for duplicates",
     route: "/wardrobe",
   },
@@ -38,9 +38,9 @@ export default function UploadScreen() {
           <Text style={styles.title}>What would you like to do?</Text>
           <Text style={styles.subtitle}>Choose an option to get started</Text>
         </View>
-        <View style={styles.sparkleButton}>
-          <Ionicons name="sparkles-outline" size={18} color="#9CA3AF" />
-        </View>
+        <TouchableOpacity style={styles.sparkleButton} onPress={() => router.push("/saved-outfits")}>
+          <Ionicons name="bookmark-outline" size={18} color="#374151" />
+        </TouchableOpacity>
       </View>
 
       <View style={styles.optionList}>

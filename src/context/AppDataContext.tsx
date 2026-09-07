@@ -112,8 +112,8 @@ const INITIAL_WISHLIST: WishlistItem[] = [
 ];
 
 const INITIAL_PROFILE: ProfileData = {
-  height: "5'10\"",
-  weight: "165 lb",
+  height: "178 cm",
+  weight: "75 kg",
   chest: "",
   waist: "",
   hip: "",

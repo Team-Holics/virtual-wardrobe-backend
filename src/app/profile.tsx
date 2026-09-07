@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import BottomTabBar from "../../src/app/BottomTabBar";
 import { useAppData } from "../../src/context/AppDataContext";
@@ -26,21 +26,17 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+       <SafeAreaView style={styles.container} edges={["top"]}>
+      <View style={{ flex: 1 }}>
       <View style={styles.headerRow}>
         <Text style={styles.title}>My Profile</Text>
-        <View style={{ flexDirection: "row", gap: 8 }}>
-          <TouchableOpacity style={styles.iconButton}>
-            <Ionicons name="settings-outline" size={20} color="#374151" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton} onPress={handleLogout}>
-            <Ionicons name="log-out-outline" size={20} color="#DC2626" />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity style={styles.iconButton} onPress={handleLogout}>
+          <Ionicons name="log-out-outline" size={20} color="#DC2626" />
+        </TouchableOpacity>
       </View>
 
       {/* Avatar placeholder — teammate will replace this with the real
-          avatar image/render, driven by the measurement data saved below */}
+        avatar image/render, driven by the measurement data saved below */}
       <View style={styles.avatarSection}>
         <View style={styles.avatarCircle}>
           <View style={styles.avatarInner} />
@@ -48,7 +44,7 @@ export default function ProfileScreen() {
         <Text style={styles.avatarName}>Alex Johnson</Text>
         <TouchableOpacity style={styles.editButton} onPress={() => router.push("/profile-view")}>
           <Ionicons name="pencil-outline" size={16} color="#FFFFFF" />
-          <Text style={styles.editText}>Edit Profile</Text>
+          <Text style={styles.editText}>Edit Avatar</Text>
         </TouchableOpacity>
       </View>
 
@@ -63,10 +59,9 @@ export default function ProfileScreen() {
           label="Style Preferences"
           value={profile.styles.length > 0 ? profile.styles.join(", ") : "None set"}
         />
+            </View>
       </View>
-        <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
-        </ScrollView>
       <BottomTabBar active="profile" />
     </SafeAreaView>
   );

@@ -160,7 +160,7 @@ export default function WishlistScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
             <View style={styles.modalHeaderRow}>
-              <Text style={styles.modalTitle}>Add to Wishlist</Text>
+              <Text style={styles.modalTitle}>Wishlist</Text>
               <TouchableOpacity
                 onPress={() => {
                   resetForm();

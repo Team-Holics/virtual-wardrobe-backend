@@ -11,11 +11,11 @@ const TABS: { key: TabKey; label: string; route: string; icon: keyof typeof Ioni
   { key: "profile", label: "Profile", route: "/profile", icon: "person-outline" },
 ];
 
-export default function BottomTabBar({ active }: { active: TabKey }) {
+export default function BottomTabBar({ active, compact }: { active: TabKey; compact?: boolean }) {
   const router = useRouter();
 
   return (
-    <View style={styles.container}>
+       <View style={[styles.container, compact && styles.containerCompact]}>
       {TABS.map((tab) => {
         const isActive = tab.key === active;
         return (
@@ -25,13 +25,15 @@ export default function BottomTabBar({ active }: { active: TabKey }) {
             onPress={() => router.push(tab.route as any)}
           >
             <View style={styles.iconWrap}>
-              <Ionicons
-                name={isActive ? (tab.icon.replace("-outline", "") as any) : tab.icon}
-                size={22}
-                color={isActive ? "#111827" : "#9CA3AF"}
-              />
+            <Ionicons
+              name={isActive ? (tab.icon.replace("-outline", "") as any) : tab.icon}
+              size={compact ? 18 : 22}
+              color={isActive ? "#111827" : "#9CA3AF"}
+            />
             </View>
-            <Text style={[styles.label, isActive && styles.labelActive]}>{tab.label}</Text>
+          <Text style={[styles.label, compact && styles.labelCompact, isActive && styles.labelActive]}>
+              {tab.label}
+            </Text>
           </TouchableOpacity>
         );
       })}
@@ -49,6 +51,8 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 8, // extra padding for the home-indicator area on iOS
   },
+  containerCompact: { paddingTop: 4, paddingBottom: 4 },
+  labelCompact: { fontSize: 9 },
   tab: { flex: 1, alignItems: "center", gap: 4 },
   label: { fontSize: 11, color: "#9CA3AF", fontWeight: "500" },
   labelActive: { color: "#111827", fontWeight: "700" },

@@ -95,12 +95,12 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+        <SafeAreaView style={styles.container} edges={["top"]}>
+      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>Good Morning 👋</Text>
+            <Text style={styles.greeting}>Hello! 👋</Text>
             <Text style={styles.name}>Sophia</Text>
           </View>
           <Image source={require("../../assets/images/avatar.png")} style={styles.avatar} />
@@ -136,7 +136,7 @@ export default function HomeScreen() {
           ))}
         </View>
 
-        <View style={styles.outfitGrid}>
+                <View style={styles.outfitGrid}>
           {SUGGESTED_OUTFITS[activeOutfitCategory].map((item) => (
             <View key={item.id} style={styles.outfitCard}>
               <Image source={item.image} style={styles.outfitImage} />
@@ -145,9 +145,9 @@ export default function HomeScreen() {
                 onPress={() => toggleOutfitItem(item)}
               >
                 <Ionicons
-                  name={isOutfitSaved(item.id) ? "heart" : "heart-outline"}
+                  name={isOutfitSaved(item.id) ? "bookmark" : "bookmark-outline"}
                   size={18}
-                  color={isOutfitSaved(item.id) ? "#E11D48" : "#111827"}
+                  color="#111827"
                 />
               </TouchableOpacity>
               <Text style={styles.outfitName}>{item.name}</Text>
@@ -188,11 +188,12 @@ export default function HomeScreen() {
                 onPress={() => handleToggleWishlist(item, true)}
               >
                 <Ionicons
-                  name={savedMap[item.id] ? "heart" : "heart-outline"}
+                  name={savedMap[item.id] ? "star" : "star-outline"}
                   size={18}
                   color={savedMap[item.id] ? "#E11D48" : "#111827"}
                 />
               </TouchableOpacity>
+
               <Text style={styles.outfitName}>{item.name}</Text>
             </View>
           ))}

@@ -16,18 +16,14 @@ import {
 import BottomTabBar from "../../src/app/BottomTabBar";
 import { useAppData } from "../../src/context/AppDataContext";
 
-const TOP_TABS = ["Clothes", "Outfit"] as const;
-type TopTab = (typeof TOP_TABS)[number];
-
 const FILTER_CATEGORIES = ["All", "Tops", "Bottoms", "Dresses", "Shoes", "Accessories"];
 const ITEM_CATEGORIES = ["Tops", "Bottoms", "Dresses", "Shoes", "Accessories"];
 const SEASONS = ["Spring", "Summer", "Fall", "Winter"];
 
 export default function WardrobeScreen() {
   const router = useRouter();
-  const { wardrobeItems, addToWardrobe, outfitItems } = useAppData();
+  const { wardrobeItems, addToWardrobe } = useAppData();
 
-  const [topTab, setTopTab] = useState<TopTab>("Clothes");
   const [activeFilter, setActiveFilter] = useState("All");
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -115,30 +111,14 @@ export default function WardrobeScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#222" />
         </TouchableOpacity>
-        <Text style={styles.title}>My Wardrobe</Text>
+        <Text style={styles.title}>Wardrobe</Text>
         <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
           <Text style={styles.addText}>+</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Top-level tabs: Clothes / Outfit */}
-      <View style={styles.topTabRow}>
-        {TOP_TABS.map((tab) => (
-          <TouchableOpacity
-            key={tab}
-            onPress={() => setTopTab(tab)}
-            style={[styles.topTab, topTab === tab && styles.topTabActive]}
-          >
-            <Text style={[styles.topTabText, topTab === tab && styles.topTabTextActive]}>
-              {tab}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {topTab === "Clothes" ? (
-        <>
-          {/* Category filter — fixed to content size, functional */}
+            {/* Category filter — fixed to content size, functional */}
+            
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -179,26 +159,7 @@ export default function WardrobeScreen() {
                 </TouchableOpacity>
               ))}
             </View>
-          </ScrollView>
-        </>
-      ) : (
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <View style={styles.grid}>
-            {outfitItems.length === 0 && (
-              <Text style={styles.emptyText}>
-                No outfits saved yet. Outfits you like from Home will show up here.
-              </Text>
-            )}
-
-            {outfitItems.map((item) => (
-              <View key={item.id} style={styles.card}>
-                <Image source={item.image} style={styles.clothImage} />
-                <Text style={styles.name}>{item.name}</Text>
-              </View>
-            ))}
-          </View>
-        </ScrollView>
-      )}
+                    </ScrollView>
 
       <BottomTabBar active="upload" />
 

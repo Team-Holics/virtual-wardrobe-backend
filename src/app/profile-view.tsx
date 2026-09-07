@@ -69,14 +69,24 @@ export default function ProfileEditScreen() {
             <Text style={styles.fieldHint}>Approximate fit</Text>
           </View>
 
-          <View style={styles.measurementRow}>
+        <View style={styles.measurementRow}>
             <View style={styles.measurementInput}>
               <Text style={styles.inputLabel}>Height</Text>
-              <TextInput value={height} onChangeText={setHeight} style={styles.input} />
+              <TextInput
+                value={height}
+                onChangeText={setHeight}
+                placeholder="e.g. 178 cm"
+                style={styles.input}
+              />
             </View>
             <View style={styles.measurementInput}>
               <Text style={styles.inputLabel}>Weight</Text>
-              <TextInput value={weight} onChangeText={setWeight} style={styles.input} />
+              <TextInput
+                value={weight}
+                onChangeText={setWeight}
+                placeholder="e.g. 75 kg"
+                style={styles.input}
+              />
             </View>
           </View>
 
