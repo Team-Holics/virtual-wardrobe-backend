@@ -365,4 +365,79 @@ router.post(
         }
     }
 );
+
+
+// =====================================================
+// WISHLIST IMAGE UPLOAD
+// =====================================================
+
+router.post(
+    "/wishlist",
+    authMiddleware,
+    upload.single("image"),
+    async (req, res) => {
+        try {
+            if (!req.file) {
+                return res.status(400).json({
+                    error: "No image uploaded",
+                });
+            }
+
+            const userId = req.user.user_id;
+
+            const extension =
+                path.extname(req.file.originalname).toLowerCase() ||
+                ".jpg";
+
+            const uniqueName = crypto.randomUUID();
+
+            const filePath =
+                `user-${userId}/${uniqueName}${extension}`;
+
+            const bucket =
+                process.env.SUPABASE_WISHLIST_BUCKET ||
+                "wishlist-images";
+
+            const { error: uploadError } = await supabase.storage
+                .from(bucket)
+                .upload(filePath, req.file.buffer, {
+                    contentType: req.file.mimetype,
+                    upsert: false,
+                });
+
+            if (uploadError) {
+                console.error(
+                    "Wishlist image upload error:",
+                    uploadError
+                );
+
+                return res.status(500).json({
+                    error: "Failed to upload wishlist image",
+                    details: uploadError.message,
+                });
+            }
+
+            const { data: publicUrlData } = supabase.storage
+                .from(bucket)
+                .getPublicUrl(filePath);
+
+            return res.status(201).json({
+                message: "Wishlist image uploaded successfully",
+                image_url: publicUrlData.publicUrl,
+                path: filePath,
+            });
+        } catch (error) {
+            console.error(
+                "Wishlist image upload error:",
+                error
+            );
+
+            return res.status(500).json({
+                error: "Wishlist image upload failed",
+                details: error.message,
+            });
+        }
+    }
+);
+
 module.exports = router;
