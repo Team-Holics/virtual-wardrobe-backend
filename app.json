@@ -26,23 +26,24 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-  "expo-router",
-  [
-    "expo-splash-screen",
-    {
-      "backgroundColor": "#208AEF",
-      "android": {
-        "image": "./assets/images/splash-icon.png",
-        "imageWidth": 76
-      }
-    }
-  ],
-  [
-    "expo-image-picker",
-    {
-      "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to add photos."
-    }
-  ]
-],
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#208AEF",
+          "android": {
+            "image": "./assets/images/splash-icon.png",
+            "imageWidth": 76
+          }
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to add photos."
+        }
+      ],
+      "expo-secure-store"
+    ]
   }
 }

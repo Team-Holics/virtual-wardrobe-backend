@@ -1,6 +1,8 @@
 import { router } from "expo-router";
+import * as SecureStore from "expo-secure-store";
 import { useState } from "react";
 import {
+  ActivityIndicator,
   SafeAreaView,
   StyleSheet,
   Text,
@@ -9,35 +11,96 @@ import {
   View,
 } from "react-native";
 
+const API_URL = "http://127.0.0.1:3000";
+
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
       setError("Please fill in both fields.");
       return;
     }
+
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
     if (!emailPattern.test(email.trim())) {
       setError("Please enter a valid email address.");
       return;
     }
+
     if (password.length < 6) {
       setError("Password must be at least 6 characters.");
       return;
     }
-    setError("");
-    router.replace("/home");
+
+    try {
+      setLoading(true);
+      setError("");
+
+      const response = await fetch(
+        `${API_URL}/api/auth/login`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: email.trim().toLowerCase(),
+            password,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(
+          data.error ||
+          data.message ||
+          "Login failed. Please try again."
+        );
+        return;
+      }
+
+      if (!data.token) {
+        setError("Login succeeded but no token was returned.");
+        return;
+      }
+
+      await SecureStore.setItemAsync(
+        "authToken",
+        data.token
+      );
+
+      if (data.user) {
+        await SecureStore.setItemAsync(
+          "user",
+          JSON.stringify(data.user)
+        );
+      }
+
+      router.replace("/home");
+    } catch (err) {
+      console.error("Login error:", err);
+
+      setError(
+        "Cannot connect to the server. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <SafeAreaView style={styles.container}>
-
       <View style={styles.pinkCircle} />
 
       <Text style={styles.title}>Welcome Back</Text>
+
       <Text style={styles.subtitle}>
         Login to continue
       </Text>
@@ -47,6 +110,9 @@ export default function LoginScreen() {
         placeholder="Email Address"
         value={email}
         onChangeText={setEmail}
+        autoCapitalize="none"
+        keyboardType="email-address"
+        editable={!loading}
       />
 
       <TextInput
@@ -55,15 +121,30 @@ export default function LoginScreen() {
         secureTextEntry
         value={password}
         onChangeText={setPassword}
+        editable={!loading}
       />
 
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+      {error ? (
+        <Text style={styles.errorText}>
+          {error}
+        </Text>
+      ) : null}
 
       <TouchableOpacity
-        style={styles.loginButton}
+        style={[
+          styles.loginButton,
+          loading && styles.loginButtonDisabled,
+        ]}
         onPress={handleLogin}
+        disabled={loading}
       >
-        <Text style={styles.loginButtonText}>Login</Text>
+        {loading ? (
+          <ActivityIndicator color="#FFFFFF" />
+        ) : (
+          <Text style={styles.loginButtonText}>
+            Login
+          </Text>
+        )}
       </TouchableOpacity>
 
       <View style={styles.bottomRow}>
@@ -71,11 +152,13 @@ export default function LoginScreen() {
 
         <TouchableOpacity
           onPress={() => router.push("/signup")}
+          disabled={loading}
         >
-          <Text style={styles.signupText}>Sign Up</Text>
+          <Text style={styles.signupText}>
+            Sign Up
+          </Text>
         </TouchableOpacity>
       </View>
-
     </SafeAreaView>
   );
 }
@@ -131,6 +214,10 @@ const styles = StyleSheet.create({
     marginTop: 15,
   },
 
+  loginButtonDisabled: {
+    opacity: 0.7,
+  },
+
   loginButtonText: {
     color: "#FFFFFF",
     fontSize: 18,
@@ -146,6 +233,7 @@ const styles = StyleSheet.create({
     color: "#8C4D5A",
     fontWeight: "bold",
   },
+
   errorText: {
     color: "#D14343",
     fontSize: 13,
