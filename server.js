@@ -10,6 +10,7 @@ const wishlistRoutes = require("./routes/wishlistRoutes");
 const tryonRoutes = require("./routes/tryonRoutes");
 const recommendationRoutes = require("./routes/recommendationRoutes");
 const conversationRoutes = require("./routes/conversationRoutes");
+const savedOutfitRoutes = require("./routes/savedOutfitRoutes");
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/tryon", tryonRoutes);
 app.use("/api/recommendations", recommendationRoutes);
 app.use("/api/conversations", conversationRoutes);
+app.use("/api/saved-outfits", savedOutfitRoutes);
 
 app.get("/", (req, res) => {
     res.json({
