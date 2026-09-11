@@ -121,15 +121,21 @@ const RECENTLY_OUTFIT = [
   },
 ];
 
+const OUTFIT_IMAGE_KEYS: Record<string, string> = {
+  c1: "shirt1",
+  c2: "look1",
+  d1: "look3",
+  d2: "shirt2",
+  w1: "look2",
+  w2: "shirt3",
+  p1: "look4",
+  p2: "shoe1",
+};
+
 export default function HomeScreen() {
   const router = useRouter();
 
-  const {
-    addToWishlist,
-    removeFromWishlist,
-    toggleOutfitItem,
-    isOutfitSaved,
-  } = useAppData();
+  const { addToWishlist, removeFromWishlist } = useAppData();
 
   const [activeOutfitCategory, setActiveOutfitCategory] =
     useState<OutfitCategory>("Casual");
@@ -137,6 +143,9 @@ export default function HomeScreen() {
   const [savedMap, setSavedMap] = useState<Record<string, string>>({});
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [savedOutfitIds, setSavedOutfitIds] = useState<Set<string>>(
+    new Set()
+  );
 
   useEffect(() => {
     if (!toastMessage) return;
@@ -191,10 +200,56 @@ export default function HomeScreen() {
     }
   }, []);
 
+  const loadSavedOutfits = useCallback(async () => {
+    try {
+      const token = await SecureStore.getItemAsync("authToken");
+
+      if (!token) {
+        return;
+      }
+
+      const response = await fetch(`${API_URL}/api/saved-outfits`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const text = await response.text();
+
+      let data: any;
+
+      try {
+        data = text ? JSON.parse(text) : [];
+      } catch {
+        console.log("Saved outfits invalid response:", text);
+        return;
+      }
+
+      if (!response.ok) {
+        console.log("Saved outfits load failed:", data);
+        return;
+      }
+
+      const ids = new Set<string>(
+        Array.isArray(data)
+          ? data.map(
+            (item: { recommendation_id: string }) =>
+              item.recommendation_id
+          )
+          : []
+      );
+
+      setSavedOutfitIds(ids);
+    } catch (error) {
+      console.error("Saved outfits load error:", error);
+    }
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       loadUserProfile();
-    }, [loadUserProfile])
+      loadSavedOutfits();
+    }, [loadUserProfile, loadSavedOutfits])
   );
 
   const weatherTemp = 34;
@@ -237,6 +292,102 @@ export default function HomeScreen() {
     }
   };
 
+  const handleToggleOutfit = async (item: {
+    id: string;
+    name: string;
+    image: any;
+  }) => {
+    try {
+      const token = await SecureStore.getItemAsync("authToken");
+
+      if (!token) {
+        router.replace("/login");
+        return;
+      }
+
+      const isSaved = savedOutfitIds.has(item.id);
+
+      if (isSaved) {
+        const response = await fetch(
+          `${API_URL}/api/saved-outfits/${item.id}`,
+          {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        const text = await response.text();
+
+        let data: any = {};
+
+        try {
+          data = text ? JSON.parse(text) : {};
+        } catch {
+          throw new Error("Invalid server response");
+        }
+
+        if (!response.ok) {
+          throw new Error(
+            data.error || "Failed to remove saved outfit"
+          );
+        }
+
+        setSavedOutfitIds((prev) => {
+          const next = new Set(prev);
+          next.delete(item.id);
+          return next;
+        });
+
+        setToastMessage("Removed from saved outfits");
+      } else {
+        const response = await fetch(`${API_URL}/api/saved-outfits`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            recommendation_id: item.id,
+            outfit_name: item.name,
+            image_key: OUTFIT_IMAGE_KEYS[item.id] || null,
+          }),
+        });
+
+        const text = await response.text();
+
+        let data: any = {};
+
+        try {
+          data = text ? JSON.parse(text) : {};
+        } catch {
+          throw new Error("Invalid server response");
+        }
+
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to save outfit");
+        }
+
+        setSavedOutfitIds((prev) => {
+          const next = new Set(prev);
+          next.add(item.id);
+          return next;
+        });
+
+        setToastMessage("Outfit saved successfully");
+      }
+    } catch (error) {
+      console.error("Toggle saved outfit error:", error);
+
+      setToastMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to update saved outfit"
+      );
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <ScrollView
@@ -274,15 +425,11 @@ export default function HomeScreen() {
               color="#111827"
             />
 
-            <Text style={styles.weatherText}>
-              {weatherTemp}°C
-            </Text>
+            <Text style={styles.weatherText}>{weatherTemp}°C</Text>
           </View>
         </View>
 
-        <Text style={styles.subTitle}>
-          Suggested Outfits
-        </Text>
+        <Text style={styles.subTitle}>Suggested Outfits</Text>
 
         <View style={styles.categoryTabRow}>
           {OUTFIT_CATEGORIES.map((cat) => (
@@ -309,42 +456,34 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.outfitGrid}>
-          {SUGGESTED_OUTFITS[activeOutfitCategory].map(
-            (item) => (
-              <View key={item.id} style={styles.outfitCard}>
-                <Image
-                  source={item.image}
-                  style={styles.outfitImage}
-                />
+          {SUGGESTED_OUTFITS[activeOutfitCategory].map((item) => (
+            <View key={item.id} style={styles.outfitCard}>
+              <Image
+                source={item.image}
+                style={styles.outfitImage}
+              />
 
-                <TouchableOpacity
-                  style={styles.heartButton}
-                  onPress={() =>
-                    toggleOutfitItem(item)
+              <TouchableOpacity
+                style={styles.heartButton}
+                onPress={() => handleToggleOutfit(item)}
+              >
+                <Ionicons
+                  name={
+                    savedOutfitIds.has(item.id)
+                      ? "bookmark"
+                      : "bookmark-outline"
                   }
-                >
-                  <Ionicons
-                    name={
-                      isOutfitSaved(item.id)
-                        ? "bookmark"
-                        : "bookmark-outline"
-                    }
-                    size={18}
-                    color="#111827"
-                  />
-                </TouchableOpacity>
+                  size={18}
+                  color="#111827"
+                />
+              </TouchableOpacity>
 
-                <Text style={styles.outfitName}>
-                  {item.name}
-                </Text>
-              </View>
-            )
-          )}
+              <Text style={styles.outfitName}>{item.name}</Text>
+            </View>
+          ))}
         </View>
 
-        <Text style={styles.sectionTitle}>
-          Recently Outfit
-        </Text>
+        <Text style={styles.sectionTitle}>Recently Outfit</Text>
 
         <ScrollView
           horizontal
@@ -355,9 +494,7 @@ export default function HomeScreen() {
               key={item.id}
               style={styles.smallCard}
               onPress={() =>
-                router.push(
-                  `/outfit-detail?id=${item.id}`
-                )
+                router.push(`/outfit-detail?id=${item.id}`)
               }
             >
               <Image
@@ -365,31 +502,22 @@ export default function HomeScreen() {
                 style={styles.smallImage}
               />
 
-              <Text style={styles.smallTitle}>
-                {item.name}
-              </Text>
+              <Text style={styles.smallTitle}>{item.name}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
 
-        <Text style={styles.sectionTitle}>
-          Popular Picks!
-        </Text>
+        <Text style={styles.sectionTitle}>Popular Picks!</Text>
 
         {toastMessage && (
           <View style={styles.toast}>
-            <Text style={styles.toastText}>
-              {toastMessage}
-            </Text>
+            <Text style={styles.toastText}>{toastMessage}</Text>
           </View>
         )}
 
         <View style={styles.outfitGrid}>
           {POPULAR_PICKS.map((item) => (
-            <View
-              key={item.id}
-              style={styles.outfitCard}
-            >
+            <View key={item.id} style={styles.outfitCard}>
               <Image
                 source={item.image}
                 style={styles.outfitImage}
@@ -397,9 +525,7 @@ export default function HomeScreen() {
 
               <TouchableOpacity
                 style={styles.heartButton}
-                onPress={() =>
-                  handleToggleWishlist(item, true)
-                }
+                onPress={() => handleToggleWishlist(item, true)}
               >
                 <Ionicons
                   name={
@@ -409,16 +535,12 @@ export default function HomeScreen() {
                   }
                   size={18}
                   color={
-                    savedMap[item.id]
-                      ? "#E11D48"
-                      : "#111827"
+                    savedMap[item.id] ? "#E11D48" : "#111827"
                   }
                 />
               </TouchableOpacity>
 
-              <Text style={styles.outfitName}>
-                {item.name}
-              </Text>
+              <Text style={styles.outfitName}>{item.name}</Text>
             </View>
           ))}
         </View>
